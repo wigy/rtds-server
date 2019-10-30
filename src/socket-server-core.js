@@ -60,11 +60,12 @@ class SocketServerCore {
       return;
     }
     if (this.handlers[index].filter(req) && (!err || this.handlers[index].isErrorHandler)) {
-      await Promise.resolve(this.handlers[index].callback(req, async (err = null) => {
-        if (err) {
-          await this.handle(req, 0, err);
+      // TODO: More work needed here: separate async and non-async handling routes, error handlers calling next(), throwing errors
+      await Promise.resolve(this.handlers[index].callback(req, async (newErr = null) => {
+        if (newErr) {
+          await this.handle(req, 0, newErr);
         } else {
-          await this.handle(req, index + 1);
+          await this.handle(req, index + 1, err);
         }
       }, err));
     } else {

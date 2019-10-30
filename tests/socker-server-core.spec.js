@@ -57,4 +57,30 @@ describe('middleware', () => {
     const req = await test.onMessage({}, 'test');
     assert.deepStrictEqual(req.hits, ['HIT 1', 'HIT 2', 'HIT 3', 'HIT 4', 'HIT 5', 'HIT 6']);
   });
+
+  it('can handle errors', async () => {
+    const test = new SocketServerCore();
+    test.use('type1', (req, next) => {
+      req.visits = ['handler 1'];
+      next();
+    });
+    test.use('type1', (req, next, err) => {
+      if (err) {
+        req.visits.push('error handler 2');
+        return;
+      }
+      req.visits.push('handler 2');
+      next();
+    });
+    test.use('type1', (req, next) => {
+      req.visits.push('handler 3');
+      next('Failed');
+    });
+    test.use('type1', (req, next) => {
+      req.visits.push('handler 4');
+      next();
+    });
+    const req = await test.onMessage({}, 'type1');
+    assert.deepStrictEqual(req.visits, ['handler 1', 'handler 2', 'handler 3', 'error handler 2']);
+  });
 });
