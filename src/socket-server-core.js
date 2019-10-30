@@ -41,9 +41,9 @@ class SocketServerCore {
    * @param {String} type
    * @param {Object} data
    */
-  onMessage(socket, type, data) {
+  async onMessage(socket, type, data = {}) {
     const req = new Message({ socket, connection: this.connections[socket.id], type, data });
-    this.handle(req, 0);
+    await this.handle(req, 0);
     return req;
   }
 
@@ -52,7 +52,7 @@ class SocketServerCore {
    * @param {Message} req
    * @param {Number} index
    */
-  handle(req, index, err = null) {
+  async handle(req, index, err = null) {
     if (index >= this.handlers.length) {
       if (err) {
         throw err;
@@ -60,15 +60,15 @@ class SocketServerCore {
       return;
     }
     if (this.handlers[index].filter(req) && (!err || this.handlers[index].isErrorHandler)) {
-      this.handlers[index].callback(req, (err = null) => {
+      await Promise.resolve(this.handlers[index].callback(req, async (err = null) => {
         if (err) {
-          this.handle(req, 0, err);
+          await this.handle(req, 0, err);
         } else {
-          this.handle(req, index + 1);
+          await this.handle(req, index + 1);
         }
-      }, err);
+      }, err));
     } else {
-      this.handle(req, index + 1, err);
+      await this.handle(req, index + 1, err);
     }
   }
 
