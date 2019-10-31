@@ -9,6 +9,7 @@ class Message {
     this.data = data;
     this.connection = connection;
     this.error = null;
+    this.user = null;
   }
 }
 
