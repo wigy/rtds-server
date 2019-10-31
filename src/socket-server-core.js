@@ -26,13 +26,13 @@ class SocketServerCore {
 
     this.io.on('connection', (socket) => {
       socket.on('disconnect', () => {
-        console.log('Client', socket.request.connection.remoteAddress, 'disconnected.');
+        console.log('Client', socket.id, socket.request.connection.remoteAddress, 'disconnected.');
         delete this.connections[socket.id];
       });
       socket.on('message', (type, data) => this.onMessage(socket, type, data));
 
       this.connections[socket.id] = new Connection(socket);
-      console.log('Client', socket.request.connection.remoteAddress, 'connected.');
+      console.log('Client', socket.id, socket.request.connection.remoteAddress, 'connected.');
     });
   }
 
@@ -131,6 +131,15 @@ class SocketServerCore {
       }
       console.log(req.socket.id, req.type, out);
       next();
+    });
+  }
+
+  /**
+   * Add a handler that sends error if no handler has ended the chain earlier.
+   */
+  use404() {
+    this.use((req) => {
+      req.socket.emit('failure', {status: 404, message: `No handler for the message type '${req.type}'.`});
     });
   }
 
