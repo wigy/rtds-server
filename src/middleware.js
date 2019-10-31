@@ -18,6 +18,34 @@ class Middleware {
     this.callback = callback;
     this.isErrorHandler = (callback.length > 2);
   }
+
+  /**
+   * Check if this middleware can handle the message.
+   * @param {Message} req
+   */
+  canHandle(req) {
+    if (!this.filter(req)) {
+      return false;
+    }
+    if (req.error && !this.isErrorHandler) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Execute this middleware.
+   * @param {Message} req
+   * @param {Function} next
+   * @param {null|Error} err
+   */
+  async run(req, next, err = null) {
+    try {
+      return Promise.resolve(this.callback(req, next, err));
+    } catch(err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = Middleware;

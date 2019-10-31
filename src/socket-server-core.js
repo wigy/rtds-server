@@ -42,7 +42,7 @@ class SocketServerCore {
    * @param {Object} data
    */
   async onMessage(socket, type, data = {}) {
-    const req = new Message({ socket, connection: this.connections[socket.id], type, data });
+    const req = new Message({ server: this, socket, connection: this.connections[socket.id], type, data });
     await this.handle(req, 0);
     return req;
   }
@@ -53,29 +53,46 @@ class SocketServerCore {
    * @param {Number} index
    */
   async handle(req, index, err = null) {
+    // Check if all handlers done.
     if (index >= this.handlers.length) {
+      // Unhandled error, throw it.
       if (err) {
         throw err;
       }
       return;
     }
-    if (this.handlers[index].filter(req) && (!err || this.handlers[index].isErrorHandler)) {
-      // TODO: More work needed here: separate async and non-async handling routes, error handlers calling next(), throwing errors
-      await Promise.resolve(this.handlers[index].callback(req, async (newErr = null) => {
-        if (newErr) {
-          await this.handle(req, 0, newErr);
-        } else {
-          await this.handle(req, index + 1, err);
-        }
-      }, err));
-    } else {
-      await this.handle(req, index + 1, err);
+
+    // If this handler does not handle requests like this, just go to the next one.
+    if (this.handlers[index].canHandle(req)) {
+      if (err) {
+        // Running error handlers.
+        return this.handlers[index].run(req, async (newErr = null) => {
+          if (newErr) {
+            console.error(newErr);
+            throw new Error('Error handler middleware returned an error.');
+          } else {
+            await this.handle(req, index + 1, err);
+          }
+        }, err);
+      } else {
+        // Running normal handlers.
+        return this.handlers[index].run(req, async (newErr = null) => {
+          if (newErr) {
+            req.error = newErr;
+            await this.handle(req, 0, newErr);
+          } else {
+            await this.handle(req, index + 1, err);
+          }
+        }, err);
+      }
     }
+
+    return this.handle(req, index + 1, err);
   }
 
   /**
    * Register a handler middleware.
-   * @param {null|String|Function|RegExp} filter
+   * @param {null|String|Function|RegExp} [filter]
    * @param {Function<Message, Function>} middleware
    */
   use(filter, middleware = null) {
