@@ -23,7 +23,7 @@ class SocketServerAuth extends SocketServerCore {
       }
       const user = await Promise.resolve(verify(req.data));
       if (!user) {
-        req.socket.emit('error', {status: 401, message: 'Login failed.'});
+        req.socket.emit('failure', {status: 401, message: 'Login failed.'});
         return next(new Error('Login failed'));
       }
       const token = jwt.sign({app: 'Stakes', user}, this.config.SECRET);
@@ -33,19 +33,19 @@ class SocketServerAuth extends SocketServerCore {
     // Everything else, check the token or deny access with 403 error.
     this.use((req, next) => {
       if (!req.data.token) {
-        req.socket.emit('error', {status: 403, message: 'No token provided.'});
+        req.socket.emit('failure', {status: 403, message: 'No token provided.'});
         return;
       }
       try {
         const decoded = jwt.verify(req.data.token, this.config.SECRET);
         if (decoded.app !== 'Stakes') {
-          req.socket.emit('error', {status: 403, message: 'Token content invalid.'});
+          req.socket.emit('failure', {status: 403, message: 'Token content invalid.'});
           return;
         }
         req.user = decoded.user;
         next();
       } catch(err) {
-        req.socket.emit('error', {status: 403, message: 'Token verification failed.'});
+        req.socket.emit('failure', {status: 403, message: 'Token verification failed.'});
       }
     });
   }

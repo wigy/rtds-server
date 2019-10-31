@@ -32,7 +32,7 @@ describe('socket server auth', () => {
 
   it('sends error on failure', (done) => {
     server.onMessage({emit: (type, data) => {
-      assert(type === 'error');
+      assert(type === 'failure');
       assert(data.status);
       assert(data.message);
       done();
@@ -47,7 +47,7 @@ describe('socket server auth', () => {
       }
     }}, 'login', {user: 'me'});
     const req = await server.onMessage({emit: (type, data) => {
-      if (type === 'error') {
+      if (type === 'failure') {
         assert.fail();
       }
     }}, 'test', { token });

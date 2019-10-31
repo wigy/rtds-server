@@ -1,3 +1,4 @@
+const clone = require('clone');
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
@@ -101,6 +102,36 @@ class SocketServerCore {
     } else {
       this.handlers.push(new Middleware(middleware, filter));
     }
+  }
+
+  /**
+   * Register a handler middleware and put it to the front of the list.
+   * @param {null|String|Function|RegExp} [filter]
+   * @param {Function<Message, Function>} middleware
+   */
+  useFirst(filter, middleware = null) {
+    if (middleware === null) {
+      this.handlers.splice(0, 0, new Middleware(filter, null));
+    } else {
+      this.handlers.push(0, 0, new Middleware(middleware, filter));
+    }
+  }
+
+  /**
+   * Add dumping of the messages.
+   */
+  useDebug() {
+    this.useFirst((req, next) => {
+      const out = clone(req.data);
+      if (out.password) {
+        out.password = 'XXXXXX';
+      }
+      if (out.token) {
+        out.token = 'XXXXXX';
+      }
+      console.log(req.socket.id, req.type, out);
+      next();
+    });
   }
 
   /**
