@@ -22,18 +22,50 @@ class SocketServerCore {
     this.io = socketIO(this.server);
     this.app.use(cors());
     this.connections = {};
+    this.registrations = {};
     this.handlers = [];
 
     this.io.on('connection', (socket) => {
       socket.on('disconnect', () => {
-        console.log('Client', socket.id, socket.request.connection.remoteAddress, 'disconnected.');
-        delete this.connections[socket.id];
+        this.disconnect(socket.id);
       });
       socket.on('message', (type, data) => this.onMessage(socket, type, data));
 
-      this.connections[socket.id] = new Connection(socket);
+      this.connections[socket.id] = new Connection(this, socket);
       console.log('Client', socket.id, socket.request.connection.remoteAddress, 'connected.');
     });
+  }
+
+  disconnect(clientId) {
+    console.log('Client', clientId, 'disconnected.');
+    delete this.connections[clientId];
+    Object.keys(this.registrations).forEach((channel) => this.registrations[channel].delete(clientId));
+  }
+
+  /**
+   * Register a connection as a listener for changes in the channel.
+   */
+  register(channel, connection) {
+    this.registrations[channel] = this.registrations[channel] || new Set();
+    this.registrations[channel].add(connection);
+  }
+
+  /**
+   * Unregister a connection from listeners for changes in the channel.
+   */
+  unregister(channel, connection) {
+    if (this.registrations[channel]) {
+      this.registrations[channel].delete(connection);
+    }
+  }
+
+  /**
+   * Get a set of listener connections for the given channel.
+   * @param {String} channel
+   * @returns {Set<Connection>}
+   */
+  listeners(channel) {
+    return this.registrations[channel] || new Set();
   }
 
   /**

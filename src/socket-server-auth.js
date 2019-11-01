@@ -23,11 +23,11 @@ class SocketServerAuth extends SocketServerCore {
       }
       const user = await Promise.resolve(verify(req.data));
       if (!user) {
-        req.socket.emit('failure', {status: 401, message: 'Login failed.'});
+        req.socket.emit('login-failed', {status: 401, message: 'Login failed.'});
         return next(new Error('Login failed'));
       }
       const token = jwt.sign({app: 'Stakes', user}, this.config.SECRET);
-      req.socket.emit('welcome', {user, token})
+      req.socket.emit('login-successful', {user, token})
     });
 
     // Everything else, check the token or deny access with 403 error.
