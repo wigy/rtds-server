@@ -17,11 +17,19 @@ class SocketServerSync extends SocketServerAuth {
    * @param {String} channel
    * @param {Object} param1
    */
-  addChannel(channel, { fetch, create }) {
+  addChannel(channel, { fetch, create, affects }) {
     if (this.channels[channel]) {
       throw new Error(`Channel ${channel} already defined.`);
     }
-    this.channels[channel] = { fetch, create }
+    this.channels[channel] = { fetch, create, affects };
+  }
+
+  /**
+   * Get the list of all channels.
+   * @returns {String[]}
+   */
+  getChannels() {
+    return Object.keys(this.channels);
   }
 
   /**
@@ -34,8 +42,8 @@ class SocketServerSync extends SocketServerAuth {
       req.socket.emit('failure', {status: 404, message: `No such channel as '${channel}'.`});
       return;
     }
-    req.connection.subscribe(channel, filter || null);
-    const res = await this.fetchObjects(req, channel, filter);
+    const sub = req.connection.subscribe(channel, filter || null);
+    const res = await this.fetchObjects(req, channel, sub.filter);
     req.socket.emit(channel, res);
   }
 
@@ -86,15 +94,8 @@ class SocketServerSync extends SocketServerAuth {
       req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object creation.`});
       return;
     }
-    const newObject = await this.channels[channel].create(data);
-    // TODO: Resolve channel and filter dependencies.
-    for (const conn of req.server.listeners(channel)) {
-      for (const filter of conn.filters(channel)) {
-        console.log('Debug: Refreshing', conn.id, channel, filter);
-        const data = await this.fetchObjects(req, channel, filter);
-        conn.socket.emit(channel, data);
-      }
-    }
+    const object = await this.channels[channel].create(data);
+    return { channel, object };
   }
 
   /**
@@ -102,18 +103,62 @@ class SocketServerSync extends SocketServerAuth {
    * @param {Message} req
    */
   async createObjects(req) {
+    const results = [];
     for (const [k, v] of Object.entries(req.data)) {
       if (k === 'token') {
         continue;
       }
       if (v instanceof Array) {
-        for (data of v) {
-          await this.createObject(req, k, data);
+        for (const data of v) {
+          results.push(await this.createObject(req, k, data));
         }
       } else if (v instanceof Object) {
-        await this.createObject(req, k, v);
+        results.push(await this.createObject(req, k, v));
       } else {
         console.error(`Invalid object initialization ${JSON.stringify(v)} for ${k}.`);
+      }
+    }
+    await this.synchronize(req, results);
+  }
+
+  /**
+   * Get the idea of channels that changed object affects.
+   * @param {Message} req
+   * @param {Object} object
+   * @param {String} channel
+   */
+  async affects(req, { object, channel }) {
+    if (!this.channels[channel].affects) {
+      req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support dependency checking.`});
+      return;
+    }
+    const ret = await this.channels[channel].affects(object);
+    return ret;
+  }
+
+  /**
+   * Scan for all listeners that needs update for the changed objects.
+   * @param {Object[]} objects
+   * @param {String} objects[].channel
+   * @param {Object} objects[].object
+   */
+  async synchronize(req, objects) {
+    const handled = new Set();
+    for (const item of objects) {
+      for (const channel of await this.affects(req, item)) {
+        if (!handled.has(channel)) {
+          handled.add(channel);
+          const cache = {};
+          for (const conn of req.server.listeners(channel)) {
+            for (const filter of conn.filters(channel)) {
+              // TODO: Test filter against objects.
+              if (!(filter.name in cache)) {
+                cache[filter.name] = await this.fetchObjects(req, channel, filter);
+              }
+              conn.socket.emit(channel, cache[filter.name]);
+            }
+          }
+        }
       }
     }
   }

@@ -25,17 +25,26 @@ class SocketServerCore {
     this.registrations = {};
     this.handlers = [];
 
-    this.io.on('connection', (socket) => {
-      socket.on('disconnect', () => {
-        this.disconnect(socket.id);
-      });
-      socket.on('message', (type, data) => this.onMessage(socket, type, data));
-
-      this.connections[socket.id] = new Connection(this, socket);
-      console.log('Client', socket.id, socket.request.connection.remoteAddress, 'connected.');
-    });
+    this.io.on('connection', (socket) => this.connect(socket));
   }
 
+  /**
+   * Establish a connection.
+   * @param {Socket} socket
+   * @returns {String} The connection ID.
+   */
+  connect(socket) {
+    socket.on('disconnect', () => this.disconnect(socket.id));
+    socket.on('message', (type, data) => this.onMessage(socket, type, data));
+    this.connections[socket.id] = new Connection(this, socket);
+    console.log('Client', socket.id, socket.request.connection.remoteAddress, 'connected.');
+    return socket.id;
+  }
+
+  /**
+   * Demolish the connection.
+   * @param {String} clientId
+   */
   disconnect(clientId) {
     console.log('Client', clientId, 'disconnected.');
     delete this.connections[clientId];
@@ -46,7 +55,7 @@ class SocketServerCore {
    * Register a connection as a listener for changes in the channel.
    */
   register(channel, connection) {
-    this.registrations[channel] = this.registrations[channel] || new Set();
+    this.registrations[channel] = this.registrations[channel] || new Set();
     this.registrations[channel].add(connection);
   }
 

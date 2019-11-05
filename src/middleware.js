@@ -42,7 +42,7 @@ class Middleware {
   async run(req, next, err = null) {
     try {
       return Promise.resolve(this.callback(req, next, err));
-    } catch(err) {
+    } catch (err) {
       next(err);
     }
   }

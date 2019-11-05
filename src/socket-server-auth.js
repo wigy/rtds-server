@@ -27,7 +27,7 @@ class SocketServerAuth extends SocketServerCore {
         return next(new Error('Login failed'));
       }
       const token = jwt.sign({app: 'Stakes', user}, this.config.SECRET);
-      req.socket.emit('login-successful', {user, token})
+      req.socket.emit('login-successful', {user, token});
     });
 
     // Everything else, check the token or deny access with 403 error.
@@ -44,7 +44,7 @@ class SocketServerAuth extends SocketServerCore {
         }
         req.user = decoded.user;
         next();
-      } catch(err) {
+      } catch (err) {
         req.socket.emit('failure', {status: 403, message: 'Token verification failed.'});
       }
     });

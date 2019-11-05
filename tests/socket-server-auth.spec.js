@@ -10,53 +10,61 @@ describe('socket server auth', () => {
         return {name: 'My Name'};
       }
     },
-    (err) => {});
+    (_err) => {});
 
   it('can separate valid and invalid user', async () => {
-    req = await server.onMessage({emit: () => {}}, 'login', {user: 'me'});
+    let req = await server.onMessage({emit: () => {}}, 'login', {user: 'me'});
     assert(!req.error);
     req = await server.onMessage({emit: () => {}}, 'login', {user: 'someone'});
     assert(req.error);
   });
 
   it('sends token on success', (done) => {
-    server.onMessage({emit: (type, data) => {
-      assert(type === 'welcome');
-      assert(data.token);
-      assert(data.user.name === 'My Name');
-      const decoded = jwt.decode(data.token);
-      assert(decoded.user.name === 'My Name');
-      done();
-    }}, 'login', {user: 'me'});
+    server.onMessage({
+      emit: (type, data) => {
+        assert(type === 'login-successful');
+        assert(data.token);
+        assert(data.user.name === 'My Name');
+        const decoded = jwt.decode(data.token);
+        assert(decoded.user.name === 'My Name');
+        done();
+      }
+    }, 'login', {user: 'me'});
   });
 
   it('sends error on failure', (done) => {
-    server.onMessage({emit: (type, data) => {
-      assert(type === 'failure');
-      assert(data.status);
-      assert(data.message);
-      done();
-    }}, 'login', {user: 'wrong'});
+    server.onMessage({
+      emit: (type, data) => {
+        assert(type === 'login-failed');
+        assert(data.status);
+        assert(data.message);
+        done();
+      }
+    }, 'login', {user: 'wrong'});
   });
 
   it('accepts messages with correct token', async () => {
     let token;
-    await server.onMessage({emit: (type, data) => {
-      if (type === 'welcome') {
-        token = data.token;
+    await server.onMessage({
+      emit: (type, data) => {
+        if (type === 'login-successful') {
+          token = data.token;
+        }
       }
-    }}, 'login', {user: 'me'});
-    const req = await server.onMessage({emit: (type, data) => {
-      if (type === 'failure') {
-        assert.fail();
+    }, 'login', {user: 'me'});
+    const req = await server.onMessage({
+      emit: (type, data) => {
+        if (type === 'failure') {
+          assert.fail();
+        }
       }
-    }}, 'test', { token });
+    }, 'test', { token });
     assert(req.user);
     assert(req.user.name === 'My Name');
   });
 
   it('denies messages with missing or incorrect token', async () => {
-    server.use('pass', (req) => req.passed = true);
+    server.use('pass', (req) => (req.passed = true));
     let req = await server.onMessage({emit: () => {}}, 'pass');
     assert(!req.passed);
     req = await server.onMessage({emit: () => {}}, 'pass', {token: 'BAD'});

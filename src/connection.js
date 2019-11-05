@@ -1,4 +1,5 @@
 const Subscription = require('./subscription');
+const Filter = require('./filter');
 
 /**
  * A description of a connection.
@@ -16,9 +17,9 @@ class Connection {
    * @param {String} channel
    */
   filters(channel) {
-    return this.subscriptions[channel] ?
-    this.subscriptions[channel].map(s => s.filter) :
-    [];
+    return this.subscriptions[channel]
+      ? this.subscriptions[channel].map(s => s.filter)
+      : [];
   }
 
   /**
@@ -30,15 +31,19 @@ class Connection {
     if (!this.subscriptions[channel]) {
       return -1;
     }
-    return this.subscriptions[channel].findIndex(s => s.isSame({ filter }));
+    return this.subscriptions[channel].findIndex(sub => sub.filter.isSame(filter));
   }
 
   /**
    * Subscribe to the data sync channel.
    * @param {String} channel
-   * @param {null|Object} filter
+   * @param {null|Object|Filter} filter
+   * @returns {Subscription}
    */
   subscribe(channel, filter = null) {
+    if (!(filter instanceof Filter)) {
+      filter = new Filter(filter);
+    }
     this.subscriptions[channel] = this.subscriptions[channel] || [];
     const idx = this.indexOf(channel, filter);
     if (idx >= 0) {
@@ -56,6 +61,9 @@ class Connection {
    * @param {null|Object} filter
    */
   unsubscribe(channel, filter = null) {
+    if (!(filter instanceof Filter)) {
+      filter = new Filter(filter);
+    }
     const idx = this.indexOf(channel, filter);
     if (idx >= 0) {
       this.subscriptions[channel].splice(idx, 1);
