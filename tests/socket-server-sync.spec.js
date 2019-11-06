@@ -19,7 +19,7 @@ describe('socket server sync', async () => {
       A: [{id: 1, name: 'A'}, {id: 2, name: 'a'}]
     };
     server.addChannel('channelA', {
-      fetch: async () => clone(store.A),
+      read: async () => clone(store.A),
       create: async (data) => {
         store.A.push(data);
         return data;

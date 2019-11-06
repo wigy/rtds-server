@@ -26,16 +26,16 @@ class SocketServerSync extends SocketServerAuth {
    * Define a new channel and its handler functions.
    * @param {String} channel
    * @param {Object} hooks
-   * @param {Function} hooks.fetch
+   * @param {Function} hooks.read
    * @param {Function} hooks.create
    * @param {Function} hooks.update
    * @param {Function} hooks.affects
    */
-  addChannel(channel, { fetch, create, update, affects }) {
+  addChannel(channel, { read, create, update, affects }) {
     if (this.channels[channel]) {
       throw new Error(`Channel ${channel} already defined.`);
     }
-    this.channels[channel] = { fetch, create, update, affects };
+    this.channels[channel] = { read, create, update, affects };
   }
 
   /**
@@ -57,7 +57,7 @@ class SocketServerSync extends SocketServerAuth {
       return;
     }
     const sub = req.connection.subscribe(channel, filter || null);
-    const res = await this.fetchObjects(req, channel, sub.filter);
+    const res = await this.readObjects(req, channel, sub.filter);
     req.socket.emit(channel, res);
   }
 
@@ -80,16 +80,16 @@ class SocketServerSync extends SocketServerAuth {
    * @param {String} channel
    * @param {Object} filter
    */
-  async fetchObjects(req, channel, filter) {
+  async readObjects(req, channel, filter) {
     if (!this.channels[channel]) {
       req.socket.emit('failure', {status: 404, message: `No such channel as '${channel}'.`});
       return;
     }
-    if (!this.channels[channel].fetch) {
-      req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object fetching.`});
+    if (!this.channels[channel].read) {
+      req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object reading.`});
       return;
     }
-    const data = await this.channels[channel].fetch(filter);
+    const data = await this.channels[channel].read(filter);
     return data;
   }
 
@@ -215,7 +215,7 @@ class SocketServerSync extends SocketServerAuth {
             for (const filter of conn.filters(channel)) {
               // Cache results.
               if (!(filter.name in cache)) {
-                cache[filter.name] = await this.fetchObjects(req, channel, filter);
+                cache[filter.name] = await this.readObjects(req, channel, filter);
               }
               conn.socket.emit(channel, cache[filter.name]);
             }
