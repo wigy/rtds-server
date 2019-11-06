@@ -4,8 +4,8 @@ const SocketServerAuth = require('./socket-server-auth');
  * Server for handling collection of data with synchronization dependencies.
  */
 class SocketServerSync extends SocketServerAuth {
-  constructor(config, auth) {
-    super(config, auth);
+  constructor(config, auth, error = (err) => console.error(err)) {
+    super(config, auth, error);
     this.channels = {};
     this.use('subscribe', async (req) => this.subscribe(req));
     this.use('unsubscribe', async (req) => this.unsubscribe(req));
@@ -141,17 +141,23 @@ class SocketServerSync extends SocketServerAuth {
    * @param {Object[]} objects
    * @param {String} objects[].channel
    * @param {Object} objects[].object
+   *
+   * Note: default synchronization is not efficient for bigger number of objects.
+   * It is recommended to write custom versions in sub-class that takes into account
+   * domain specific short-cuts.
    */
   async synchronize(req, objects) {
     const handled = new Set();
     for (const item of objects) {
       for (const channel of await this.affects(req, item)) {
+        // Handle each channel on first encounter and skip the rest.
         if (!handled.has(channel)) {
           handled.add(channel);
           const cache = {};
+          // Go through filters established per connection.
           for (const conn of req.server.listeners(channel)) {
             for (const filter of conn.filters(channel)) {
-              // TODO: Test filter against objects.
+              // Cache results.
               if (!(filter.name in cache)) {
                 cache[filter.name] = await this.fetchObjects(req, channel, filter);
               }

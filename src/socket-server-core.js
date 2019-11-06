@@ -31,14 +31,15 @@ class SocketServerCore {
   /**
    * Establish a connection.
    * @param {Socket} socket
-   * @returns {String} The connection ID.
+   * @returns {Connection}
    */
   connect(socket) {
     socket.on('disconnect', () => this.disconnect(socket.id));
     socket.on('message', (type, data) => this.onMessage(socket, type, data));
     this.connections[socket.id] = new Connection(this, socket);
-    console.log('Client', socket.id, socket.request.connection.remoteAddress, 'connected.');
-    return socket.id;
+    // TODO: Provide logging handles in constructor.
+    console.log('Client', socket.id, 'connected.');
+    return this.connections[socket.id];
   }
 
   /**
