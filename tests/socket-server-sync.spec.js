@@ -24,6 +24,9 @@ describe('socket server sync', async () => {
         store.A.push(data);
         return data;
       },
+      update: async (data) => {
+        store.A = store.A.map(item => item.id === data.id ? data : item);
+      },
       affects: async (object) => ['channelA']
     });
     const socket1 = {id: 1, on: sinon.spy(), emit: sinon.spy()};
@@ -41,9 +44,16 @@ describe('socket server sync', async () => {
 
     await server.onMessage(socket1, 'create-objects', {
       token,
-      channelA: {name: 'AAA'}
+      channelA: {id: 3, name: 'AAA'}
     });
-    assert.deepStrictEqual(socket1.emit.lastCall.args, ['channelA', [{id: 1, name: 'A'}, {id: 2, name: 'a'}, {name: 'AAA'}]]);
-    assert.deepStrictEqual(socket2.emit.lastCall.args, ['channelA', [{id: 1, name: 'A'}, {id: 2, name: 'a'}, {name: 'AAA'}]]);
+    assert.deepStrictEqual(socket1.emit.lastCall.args, ['channelA', [{id: 1, name: 'A'}, {id: 2, name: 'a'}, {id: 3, name: 'AAA'}]]);
+    assert.deepStrictEqual(socket2.emit.lastCall.args, ['channelA', [{id: 1, name: 'A'}, {id: 2, name: 'a'}, {id: 3, name: 'AAA'}]]);
+
+    await server.onMessage(socket1, 'update-objects', {
+      token,
+      channelA: {id: 2, name: 'B'}
+    });
+    assert.deepStrictEqual(socket1.emit.lastCall.args, ['channelA', [{id: 1, name: 'A'}, {id: 2, name: 'B'}, {id: 3, name: 'AAA'}]]);
+    assert.deepStrictEqual(socket2.emit.lastCall.args, ['channelA', [{id: 1, name: 'A'}, {id: 2, name: 'B'}, {id: 3, name: 'AAA'}]]);
   });
 });
