@@ -19,18 +19,23 @@ class SocketServerSync extends SocketServerAuth {
     this.use('subscribe', async (req) => this.subscribe(req));
     this.use('unsubscribe', async (req) => this.unsubscribe(req));
     this.use('create-objects', async (req) => this.createObjects(req));
+    this.use('update-objects', async (req) => this.updateObjects(req));
   }
 
   /**
    * Define a new channel and its handler functions.
    * @param {String} channel
-   * @param {Object} param1
+   * @param {Object} hooks
+   * @param {Function} hooks.fetch
+   * @param {Function} hooks.create
+   * @param {Function} hooks.update
+   * @param {Function} hooks.affects
    */
-  addChannel(channel, { fetch, create, affects }) {
+  addChannel(channel, { fetch, create, update, affects }) {
     if (this.channels[channel]) {
       throw new Error(`Channel ${channel} already defined.`);
     }
-    this.channels[channel] = { fetch, create, affects };
+    this.channels[channel] = { fetch, create, update, affects };
   }
 
   /**
@@ -113,18 +118,60 @@ class SocketServerSync extends SocketServerAuth {
    */
   async createObjects(req) {
     const results = [];
-    for (const [k, v] of Object.entries(req.data)) {
-      if (k === 'token') {
+    for (const [channel, values] of Object.entries(req.data)) {
+      if (channel === 'token') {
         continue;
       }
-      if (v instanceof Array) {
-        for (const data of v) {
-          results.push(await this.createObject(req, k, data));
+      if (values instanceof Array) {
+        for (const data of values) {
+          results.push(await this.createObject(req, channel, data));
         }
-      } else if (v instanceof Object) {
-        results.push(await this.createObject(req, k, v));
+      } else if (values instanceof Object) {
+        results.push(await this.createObject(req, channel, values));
       } else {
-        this.hooks.log('error', `Invalid object initialization ${JSON.stringify(v)} for ${k}.`);
+        this.hooks.log('error', `Invalid object initialization ${JSON.stringify(values)} for ${channel}.`);
+      }
+    }
+    await this.synchronize(req, results);
+  }
+
+  /**
+   * Helper to handle single object update.
+   * @param {Message} req
+   * @param {String} channel
+   * @param {Object} data
+   */
+  async updateObject(req, channel, data) {
+    if (!this.channels[channel]) {
+      req.socket.emit('failure', {status: 404, message: `No such channel as '${channel}'.`});
+      return;
+    }
+    if (!this.channels[channel].update) {
+      req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object update.`});
+      return;
+    }
+    const object = await this.channels[channel].update(data);
+    return { channel, object };
+  }
+
+  /**
+   * Handler for object update requests.
+   * @param {Message} req
+   */
+  async updateObjects(req) {
+    const results = [];
+    for (const [channel, values] of Object.entries(req.data)) {
+      if (channel === 'token') {
+        continue;
+      }
+      if (values instanceof Array) {
+        for (const data of values) {
+          results.push(await this.updateObject(req, channel, data));
+        }
+      } else if (values instanceof Object) {
+        results.push(await this.updateObject(req, channel, values));
+      } else {
+        this.hooks.log('error', `Invalid object initialization ${JSON.stringify(values)} for ${channel}.`);
       }
     }
     await this.synchronize(req, results);
