@@ -3,7 +3,7 @@ const { SocketServerCore } = require('../src');
 
 describe('socket server core', () => {
   it('can use different message filters', async () => {
-    const server = new SocketServerCore();
+    const server = new SocketServerCore({}, {log: () => null});
     server.use((req, next) => { req.any = true; next(); });
     server.use('foo', (req, next) => { req.foo = true; next(); });
     server.use(/^bar/, (req, next) => { req.bar = true; next(); });

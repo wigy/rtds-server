@@ -14,9 +14,14 @@ class SocketServerCore {
   /**
    * @param {Object} config
    * @param {Number} config.PORT
+   * @param {Object} hooks
+   * @param {Function} hooks.log
    */
-  constructor(config) {
+  constructor(config, {
+    log = (type, ...msg) => console.log(`[${type}]`, ...msg)
+  } = {}) {
     this.config = config;
+    this.log = log;
     this.app = express();
     this.server = http.createServer(this.app);
     this.io = socketIO(this.server);
@@ -37,8 +42,7 @@ class SocketServerCore {
     socket.on('disconnect', () => this.disconnect(socket.id));
     socket.on('message', (type, data) => this.onMessage(socket, type, data));
     this.connections[socket.id] = new Connection(this, socket);
-    // TODO: Provide logging handles in constructor.
-    console.log('Client', socket.id, 'connected.');
+    this.log('info', 'Client', socket.id, 'connected.');
     return this.connections[socket.id];
   }
 
@@ -47,7 +51,7 @@ class SocketServerCore {
    * @param {String} clientId
    */
   disconnect(clientId) {
-    console.log('Client', clientId, 'disconnected.');
+    this.log('info', 'Client', clientId, 'disconnected.');
     delete this.connections[clientId];
     Object.keys(this.registrations).forEach((channel) => this.registrations[channel].delete(clientId));
   }
@@ -111,7 +115,7 @@ class SocketServerCore {
         // Running error handlers.
         return this.handlers[index].run(req, async (newErr = null) => {
           if (newErr) {
-            console.error(newErr);
+            this.log('error', newErr);
             throw new Error('Error handler middleware returned an error.');
           } else {
             await this.handle(req, index + 1, err);
@@ -171,7 +175,7 @@ class SocketServerCore {
       if (out.token) {
         out.token = 'XXXXXX';
       }
-      console.log(req.socket.id, req.type, out);
+      this.log('debug', req.socket.id, req.type, out);
       next();
     });
   }
@@ -189,7 +193,7 @@ class SocketServerCore {
    * Launch the socket server.
    */
   run() {
-    console.log(`Listening on port ${this.config.PORT}.`);
+    this.log('info', `Listening on port ${this.config.PORT}.`);
     this.server.listen(this.config.PORT);
   }
 }

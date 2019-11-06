@@ -2,10 +2,19 @@ const SocketServerAuth = require('./socket-server-auth');
 
 /**
  * Server for handling collection of data with synchronization dependencies.
+   * @param {Object} config
+   * @param {String} config.SECRET
+   * @param {Number} config.PORT
+   * @param {Object} hooks
+   * @param {Function} hooks.log
+   * @param {Function} hooks.auth
  */
 class SocketServerSync extends SocketServerAuth {
-  constructor(config, auth, error = (err) => console.error(err)) {
-    super(config, auth, error);
+  constructor(config, {
+    auth = async (_cred) => false,
+    log = (type, ...msg) => console.log(`[${type}]`, ...msg)
+  } = {}) {
+    super(config, { auth, log });
     this.channels = {};
     this.use('subscribe', async (req) => this.subscribe(req));
     this.use('unsubscribe', async (req) => this.unsubscribe(req));
@@ -115,7 +124,7 @@ class SocketServerSync extends SocketServerAuth {
       } else if (v instanceof Object) {
         results.push(await this.createObject(req, k, v));
       } else {
-        console.error(`Invalid object initialization ${JSON.stringify(v)} for ${k}.`);
+        this.hooks.log('error', `Invalid object initialization ${JSON.stringify(v)} for ${k}.`);
       }
     }
     await this.synchronize(req, results);

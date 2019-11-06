@@ -4,13 +4,17 @@ const { SocketServerAuth } = require('../src');
 
 describe('socket server auth', () => {
   const server = new SocketServerAuth(
-    {SECRET: 'secret123'},
-    (auth) => {
-      if (auth.user === 'me') {
-        return {name: 'My Name'};
-      }
+    {
+      SECRET: 'secret123'
     },
-    (_err) => {});
+    {
+      auth: (auth) => {
+        if (auth.user === 'me') {
+          return {name: 'My Name'};
+        }
+      },
+      log: () => null
+    });
 
   it('can separate valid and invalid user', async () => {
     let req = await server.onMessage({emit: () => {}}, 'login', {user: 'me'});

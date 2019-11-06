@@ -9,19 +9,24 @@ class SocketServerAuth extends SocketServerCore {
    * Provide configuration and user verification function returning user data on success.
    * @param {Object} config
    * @param {String} config.SECRET
-   * @param {Function} verify
-   * @param {Function} error
+   * @param {Number} config.PORT
+   * @param {Object} hooks
+   * @param {Function} hooks.log
+   * @param {Function} hooks.auth
    */
-  constructor(config, verify, error = (err) => console.error(err)) {
-    super(config);
+  constructor(config, {
+    auth = async (_cred) => false,
+    log = (type, ...msg) => console.log(`[${type}]`, ...msg)
+  } = {}) {
+    super(config, { log });
 
     // Handle login messages and send signed token on success or 401 error on failure.
     this.use('login', async (req, next, err) => {
       if (err) {
-        error(`Login failed for ${JSON.stringify(req.data)}`);
+        this.log('error', `Login failed for ${JSON.stringify(req.data)}`);
         return;
       }
-      const user = await Promise.resolve(verify(req.data));
+      const user = await Promise.resolve(auth(req.data));
       if (!user) {
         req.socket.emit('login-failed', {status: 401, message: 'Login failed.'});
         return next(new Error('Login failed'));

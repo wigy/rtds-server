@@ -6,9 +6,13 @@ const { SocketServerSync, Message } = require('../src');
 describe('socket server sync', async () => {
   const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHAiOiJTdGFrZXMiLCJ1c2VyIjp7Im5hbWUiOiJNeSBOYW1lIn0sImlhdCI6MTU3MjUxNjEzOH0.ABOpVLroYKiFcuvtSs2jMB0gMEAJ8nkRDj7P-UazfBA';
   const server = new SocketServerSync(
-    {SECRET: 'secret123'},
-    (_auth) => true,
-    (_err) => {});
+    {
+      SECRET: 'secret123'
+    },
+    {
+      auth: (cred) => true,
+      log: () => null
+    });
 
   it('updates all clients correctly', async () => {
     const store = {
