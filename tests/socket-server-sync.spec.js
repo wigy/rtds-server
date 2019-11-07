@@ -27,6 +27,7 @@ describe('socket server sync', async () => {
       update: async (data) => {
         store.A = store.A.map(item => item.id === data.id ? data : item);
       },
+      del: async (data) => (store.A = store.A.filter(item => item.id !== data.id)),
       affects: async (object) => ['channelA']
     });
     const socket1 = {id: 1, on: sinon.spy(), emit: sinon.spy()};
@@ -55,5 +56,12 @@ describe('socket server sync', async () => {
     });
     assert.deepStrictEqual(socket1.emit.lastCall.args, ['channelA', [{id: 1, name: 'A'}, {id: 2, name: 'B'}, {id: 3, name: 'AAA'}]]);
     assert.deepStrictEqual(socket2.emit.lastCall.args, ['channelA', [{id: 1, name: 'A'}, {id: 2, name: 'B'}, {id: 3, name: 'AAA'}]]);
+
+    await server.onMessage(socket2, 'delete-objects', {
+      token,
+      channelA: {id: 1}
+    });
+    assert.deepStrictEqual(socket1.emit.lastCall.args, ['channelA', [{id: 2, name: 'B'}, {id: 3, name: 'AAA'}]]);
+    assert.deepStrictEqual(socket2.emit.lastCall.args, ['channelA', [{id: 2, name: 'B'}, {id: 3, name: 'AAA'}]]);
   });
 });

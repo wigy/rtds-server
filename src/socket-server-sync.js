@@ -16,10 +16,12 @@ class SocketServerSync extends SocketServerAuth {
   } = {}) {
     super(config, { auth, log });
     this.channels = {};
+    // TODO: Use multi-word.
     this.use('subscribe', async (req) => this.subscribe(req));
     this.use('unsubscribe', async (req) => this.unsubscribe(req));
     this.use('create-objects', async (req) => this.createObjects(req));
     this.use('update-objects', async (req) => this.updateObjects(req));
+    this.use('delete-objects', async (req) => this.deleteObjects(req));
   }
 
   /**
@@ -31,11 +33,11 @@ class SocketServerSync extends SocketServerAuth {
    * @param {Function} hooks.update
    * @param {Function} hooks.affects
    */
-  addChannel(channel, { read, create, update, affects }) {
+  addChannel(channel, { create, read, update, del, affects }) {
     if (this.channels[channel]) {
       throw new Error(`Channel ${channel} already defined.`);
     }
-    this.channels[channel] = { read, create, update, affects };
+    this.channels[channel] = { create, read, update, del, affects };
   }
 
   /**
@@ -160,6 +162,7 @@ class SocketServerSync extends SocketServerAuth {
    */
   async updateObjects(req) {
     const results = [];
+    // TODO: DRY
     for (const [channel, values] of Object.entries(req.data)) {
       if (channel === 'token') {
         continue;
@@ -171,7 +174,50 @@ class SocketServerSync extends SocketServerAuth {
       } else if (values instanceof Object) {
         results.push(await this.updateObject(req, channel, values));
       } else {
-        this.hooks.log('error', `Invalid object initialization ${JSON.stringify(values)} for ${channel}.`);
+        this.hooks.log('error', `Invalid object update ${JSON.stringify(values)} for ${channel}.`);
+      }
+    }
+    await this.synchronize(req, results);
+  }
+
+  /**
+   * Helper to handle single object deletion.
+   * @param {Message} req
+   * @param {String} channel
+   * @param {Object} data
+   */
+  async deleteObject(req, channel, data) {
+    if (!this.channels[channel]) {
+      req.socket.emit('failure', {status: 404, message: `No such channel as '${channel}'.`});
+      return;
+    }
+    if (!this.channels[channel].del) {
+      req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object delete.`});
+      return;
+    }
+    const object = await this.channels[channel].del(data);
+    return { channel, object };
+  }
+
+  /**
+   * Handler for object delete requests.
+   * @param {Message} req
+   */
+  async deleteObjects(req) {
+    const results = [];
+    // TODO: DRY
+    for (const [channel, values] of Object.entries(req.data)) {
+      if (channel === 'token') {
+        continue;
+      }
+      if (values instanceof Array) {
+        for (const data of values) {
+          results.push(await this.deleteObject(req, channel, data));
+        }
+      } else if (values instanceof Object) {
+        results.push(await this.deleteObject(req, channel, values));
+      } else {
+        this.hooks.log('error', `Invalid object delete filter ${JSON.stringify(values)} for ${channel}.`);
       }
     }
     await this.synchronize(req, results);
@@ -183,7 +229,7 @@ class SocketServerSync extends SocketServerAuth {
    * @param {Object} object
    * @param {String} channel
    */
-  async affects(req, { object, channel }) {
+  async affects(req, { channel, object }) {
     if (!this.channels[channel].affects) {
       req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support dependency checking.`});
       return;
@@ -205,6 +251,9 @@ class SocketServerSync extends SocketServerAuth {
   async synchronize(req, objects) {
     const handled = new Set();
     for (const item of objects) {
+      if (item === undefined) {
+        continue;
+      }
       for (const channel of await this.affects(req, item)) {
         // Handle each channel on first encounter and skip the rest.
         if (!handled.has(channel)) {

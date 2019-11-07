@@ -34,7 +34,7 @@ describe('socket server core', () => {
     assert(!req.z99);
   });
 
-  it('can runs async handlers', async () => {
+  it('can run async handlers', async () => {
     const server = new SocketServerCore();
     server.use(async (req, next) => new Promise((resolve) => {
       setTimeout(async () => { req.hits = ['HIT 1']; await next(); resolve(); }, 100);
