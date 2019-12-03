@@ -240,6 +240,7 @@ class SocketServerSync extends SocketServerAuth {
 
   /**
    * Scan for all listeners that needs update for the changed objects.
+   * @param {Message} req
    * @param {Object[]} objects
    * @param {String} objects[].channel
    * @param {Object} objects[].object
