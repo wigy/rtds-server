@@ -16,9 +16,8 @@ class SocketServerSync extends SocketServerAuth {
   } = {}) {
     super(config, { auth, log });
     this.channels = {};
-    // TODO: Use multi-word.
-    this.use('subscribe', async (req) => this.subscribe(req));
-    this.use('unsubscribe', async (req) => this.unsubscribe(req));
+    this.use('subscribe-channel', async (req) => this.subscribe(req));
+    this.use('unsubscribe-channel', async (req) => this.unsubscribe(req));
     this.use('create-objects', async (req) => this.createObjects(req));
     this.use('update-objects', async (req) => this.updateObjects(req));
     this.use('delete-objects', async (req) => this.deleteObjects(req));
