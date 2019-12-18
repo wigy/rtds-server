@@ -254,7 +254,11 @@ class SocketServerSync extends SocketServerAuth {
       if (item === undefined) {
         continue;
       }
-      for (const channel of await this.affects(req, item)) {
+      const affects = await this.affects(req, item);
+      if (!affects) {
+        throw new Error(`Got invalid response ${JSON.stringify(affects)} from affects().`);
+      }
+      for (const channel of affects) {
         // Handle each channel on first encounter and skip the rest.
         if (!handled.has(channel)) {
           handled.add(channel);
