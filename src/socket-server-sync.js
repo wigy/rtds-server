@@ -1,4 +1,5 @@
 const SocketServerAuth = require('./socket-server-auth');
+const Channel = require('./channel');
 
 /**
  * Server for handling collection of data with synchronization dependencies.
@@ -36,7 +37,7 @@ class SocketServerSync extends SocketServerAuth {
     if (this.channels[channel]) {
       throw new Error(`Channel ${channel} already defined.`);
     }
-    this.channels[channel] = { create, read, update, del, affects };
+    this.channels[channel] = new Channel(channel, { create, read, update, del, affects });
   }
 
   /**
@@ -57,7 +58,7 @@ class SocketServerSync extends SocketServerAuth {
       req.socket.emit('failure', {status: 404, message: `No such channel as '${channel}'.`});
       return;
     }
-    const sub = req.connection.subscribe(channel, filter || null);
+    const sub = req.connection.subscribe(this.channels[channel], filter || null);
     const res = await this.readObjects(req, channel, sub.filter);
     req.socket.emit(channel, res);
   }
@@ -72,7 +73,7 @@ class SocketServerSync extends SocketServerAuth {
       req.socket.emit('failure', {status: 404, message: `No such channel as '${channel}'.`});
       return;
     }
-    req.connection.unsubscribe(channel, filter || null);
+    req.connection.unsubscribe(this.channels[channel], filter || null);
   }
 
   /**

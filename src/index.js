@@ -1,4 +1,5 @@
 module.exports = {
+  Channel: require('./channel'),
   Connection: require('./connection'),
   Filter: require('./filter'),
   Message: require('./message'),

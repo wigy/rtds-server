@@ -14,61 +14,63 @@ class Connection {
 
   /**
    * Get the list of filters listening the channel.
-   * @param {String} channel
+   * @param {String} channelName
    */
-  filters(channel) {
-    return this.subscriptions[channel]
-      ? this.subscriptions[channel].map(s => s.filter)
+  filters(channelName) {
+    return this.subscriptions[channelName]
+      ? this.subscriptions[channelName].map(s => s.filter)
       : [];
   }
 
   /**
    * Find the index of the channel in the list or -1 if not found.
-   * @param {String} channel
+   * @param {String} channelName
    * @param {null|Object} filter
    */
-  indexOf(channel, filter) {
-    if (!this.subscriptions[channel]) {
+  indexOf(channelName, filter) {
+    if (!this.subscriptions[channelName]) {
       return -1;
     }
-    return this.subscriptions[channel].findIndex(sub => sub.filter.isSame(filter));
+    return this.subscriptions[channelName].findIndex(sub => sub.filter.isSame(filter));
   }
 
   /**
    * Subscribe to the data sync channel.
-   * @param {String} channel
+   * @param {Channel} channel
    * @param {null|Object|Filter} filter
    * @returns {Subscription}
    */
   subscribe(channel, filter = null) {
+    const channelName = channel.name;
     if (!(filter instanceof Filter)) {
       filter = new Filter(filter);
     }
-    this.subscriptions[channel] = this.subscriptions[channel] || [];
-    const idx = this.indexOf(channel, filter);
+    this.subscriptions[channelName] = this.subscriptions[channelName] || [];
+    const idx = this.indexOf(channelName, filter);
     if (idx >= 0) {
-      return this.subscriptions[channel][idx];
+      return this.subscriptions[channelName][idx];
     }
-    const sub = new Subscription(channel, filter);
-    this.server.register(channel, this);
-    this.subscriptions[channel].push(sub);
+    const sub = new Subscription(channelName, filter);
+    this.server.register(channelName, this);
+    this.subscriptions[channelName].push(sub);
     return sub;
   }
 
   /**
    * Unsubscribe from the data sync channel.
-   * @param {String} channel
+   * @param {Channel} channel
    * @param {null|Object} filter
    */
   unsubscribe(channel, filter = null) {
+    const channelName = channel.name;
     if (!(filter instanceof Filter)) {
       filter = new Filter(filter);
     }
-    const idx = this.indexOf(channel, filter);
+    const idx = this.indexOf(channelName, filter);
     if (idx >= 0) {
-      this.subscriptions[channel].splice(idx, 1);
-      if (this.subscriptions[channel].length === 0) {
-        this.server.unregister(channel, this);
+      this.subscriptions[channelName].splice(idx, 1);
+      if (this.subscriptions[channelName].length === 0) {
+        this.server.unregister(channelName, this);
       }
       return true;
     }
