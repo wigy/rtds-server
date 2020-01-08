@@ -91,7 +91,7 @@ class SocketServerSync extends SocketServerAuth {
       req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object reading.`});
       return;
     }
-    const data = await this.channels[channel].read(filter);
+    const data = await this.channels[channel].read(filter, req);
     return data;
   }
 

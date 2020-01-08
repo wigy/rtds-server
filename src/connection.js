@@ -53,6 +53,8 @@ class Connection {
     const sub = new Subscription(channelName, filter);
     this.server.register(channelName, this);
     this.subscriptions[channelName].push(sub);
+    channel.subscribe(this);
+
     return sub;
   }
 
@@ -72,9 +74,20 @@ class Connection {
       if (this.subscriptions[channelName].length === 0) {
         this.server.unregister(channelName, this);
       }
+      channel.unsubscribe(this);
       return true;
     }
     return false;
+  }
+
+  /**
+   * Record the latest read for the particular channel.
+   * @param {Channel} channel
+   * @param {String} filter
+   * @param {Object<Set<Number>>>} pks
+   */
+  updateLatestRead(channel, filter, pks) {
+    console.log('UPDATE CHANNEL', channel, filter, pks);
   }
 }
 
