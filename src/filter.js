@@ -24,6 +24,10 @@ class Filter {
   isSame(other) {
     return this.name === other.name;
   }
+
+  toString() {
+    return this.name;
+  }
 }
 
 module.exports = Filter;

@@ -23,7 +23,7 @@ class Connection {
   }
 
   /**
-   * Find the index of the channel in the list or -1 if not found.
+   * Find the index of the channel and filter in the subscription list or -1 if not found.
    * @param {String} channelName
    * @param {null|Object} filter
    */
@@ -32,6 +32,19 @@ class Connection {
       return -1;
     }
     return this.subscriptions[channelName].findIndex(sub => sub.filter.isSame(filter));
+  }
+
+  /**
+   * Find the corresponding subscription or throw an error.
+   * @param {String} channelName
+   * @param {Filter} filter
+   */
+  subscription(channelName, filter) {
+    const idx = this.indexOf(channelName, filter);
+    if (idx < 0) {
+      throw new Error(`Unable to find subscription for channel '${channelName}' with filter '${filter}'.`);
+    }
+    return this.subscriptions[channelName][idx];
   }
 
   /**
@@ -50,10 +63,10 @@ class Connection {
     if (idx >= 0) {
       return this.subscriptions[channelName][idx];
     }
-    const sub = new Subscription(channelName, filter);
+    const sub = new Subscription(channel, filter, this);
     this.server.register(channelName, this);
     this.subscriptions[channelName].push(sub);
-    channel.subscribe(this);
+    channel.subscribe(this, sub);
 
     return sub;
   }
@@ -70,24 +83,25 @@ class Connection {
     }
     const idx = this.indexOf(channelName, filter);
     if (idx >= 0) {
+      channel.unsubscribe(this, this.subscriptions[channelName][idx]);
       this.subscriptions[channelName].splice(idx, 1);
       if (this.subscriptions[channelName].length === 0) {
         this.server.unregister(channelName, this);
       }
-      channel.unsubscribe(this);
       return true;
     }
     return false;
   }
 
   /**
-   * Record the latest read for the particular channel.
+   * Record the primary keys from the latest read for the particular channel.
    * @param {Channel} channel
-   * @param {String} filter
+   * @param {Filter} filter
    * @param {Object<Set<Number>>>} pks
    */
   updateLatestRead(channel, filter, pks) {
-    console.log('UPDATE CHANNEL', channel, filter, pks);
+    const sub = this.subscription(channel.name, filter);
+    sub.updateLatestRead(pks);
   }
 }
 

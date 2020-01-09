@@ -12,15 +12,17 @@ class Channel {
   /**
    * Hook that is called when client subscribes to this channel.
    * @param {Connection} connection
+   * @param {Subscription} subscription
    */
-  subscribe(connection) {
+  subscribe(connection, subscription) {
   }
 
   /**
    * Hook that is called when client unsubscribes from this channel.
    * @param {Connection} connection
+   * @param {Subscription} subscription
    */
-  unsubscribe(connection) {
+  unsubscribe(connection, subscription) {
   }
 }
 
