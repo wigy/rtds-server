@@ -52,8 +52,23 @@ class SocketServerCore {
    */
   disconnect(clientId) {
     this.log('info', 'Client', clientId, 'disconnected.');
+    this.connections[clientId].disconnect();
     delete this.connections[clientId];
     Object.keys(this.registrations).forEach((channel) => this.registrations[channel].delete(clientId));
+  }
+
+  /**
+   * Hook that is called when a subscription is made.
+   * @param {Subscription} sub
+   */
+  addSubscription(sub) {
+  }
+
+  /**
+   * Hook that is called when a un-subscription is made.
+   * @param {Subscription} sub
+   */
+  dropSubscription(sub) {
   }
 
   /**

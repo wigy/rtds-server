@@ -66,6 +66,7 @@ class Connection {
     const sub = new Subscription(channel, filter, this);
     this.server.register(channelName, this);
     this.subscriptions[channelName].push(sub);
+    this.server.addSubscription(sub);
     channel.subscribe(this, sub);
 
     return sub;
@@ -84,6 +85,7 @@ class Connection {
     const idx = this.indexOf(channelName, filter);
     if (idx >= 0) {
       channel.unsubscribe(this, this.subscriptions[channelName][idx]);
+      this.server.dropSubscription(this.subscriptions[channelName][idx]);
       this.subscriptions[channelName].splice(idx, 1);
       if (this.subscriptions[channelName].length === 0) {
         this.server.unregister(channelName, this);
@@ -91,6 +93,17 @@ class Connection {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Hook that is called when client has been disconnected.
+   */
+  disconnect() {
+    Object.entries(this.subscriptions).forEach(([channelName, subs]) => {
+      subs.forEach(sub => {
+        this.server.dropSubscription(sub);
+      });
+    });
   }
 
   /**
@@ -102,6 +115,7 @@ class Connection {
   updateLatestRead(channel, filter, pks) {
     const sub = this.subscription(channel.name, filter);
     sub.updateLatestRead(pks);
+    this.server.updateDependency(sub, pks);
   }
 }
 

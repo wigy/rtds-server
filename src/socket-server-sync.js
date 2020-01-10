@@ -64,6 +64,20 @@ class SocketServerSync extends SocketServerAuth {
   }
 
   /**
+   * Hook to be called when new subscription has been created.
+   * @param {Subscription} sub
+   */
+  addSubscription(sub) {
+  }
+
+  /**
+   * Hook to be called when a subscription is about to be dropped.
+   * @param {Subscription} sub
+   */
+  dropSubscription(sub) {
+  }
+
+  /**
    * Handler for a request to unsubscribe from the channel.
    * @param {Message} req
    */
@@ -149,7 +163,7 @@ class SocketServerSync extends SocketServerAuth {
       return;
     }
     if (!this.channels[channel].update) {
-      req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object update.`});
+      req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object updates.`});
       return;
     }
     const object = await this.channels[channel].update(data);
@@ -192,7 +206,7 @@ class SocketServerSync extends SocketServerAuth {
       return;
     }
     if (!this.channels[channel].del) {
-      req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object delete.`});
+      req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object deletion.`});
       return;
     }
     const object = await this.channels[channel].del(data);
