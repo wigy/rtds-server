@@ -148,7 +148,7 @@ class SocketServerSync extends SocketServerAuth {
         this.hooks.log('error', `Invalid object initialization ${JSON.stringify(values)} for ${channel}.`);
       }
     }
-    await this.synchronize(req, results);
+    await this.synchronize(req, results, 'create');
   }
 
   /**
@@ -191,7 +191,7 @@ class SocketServerSync extends SocketServerAuth {
         this.hooks.log('error', `Invalid object update ${JSON.stringify(values)} for ${channel}.`);
       }
     }
-    await this.synchronize(req, results);
+    await this.synchronize(req, results, 'update');
   }
 
   /**
@@ -234,7 +234,7 @@ class SocketServerSync extends SocketServerAuth {
         this.hooks.log('error', `Invalid object delete filter ${JSON.stringify(values)} for ${channel}.`);
       }
     }
-    await this.synchronize(req, results);
+    await this.synchronize(req, results, 'delete');
   }
 
   /**
@@ -256,6 +256,7 @@ class SocketServerSync extends SocketServerAuth {
    * Scan for all listeners that needs update for the changed objects.
    * @param {Message} req
    * @param {Object[]} objects
+   * @param {String} event Either 'create', 'update' or 'delete'.
    * @param {String} objects[].channel
    * @param {Object} objects[].object
    *
@@ -263,7 +264,7 @@ class SocketServerSync extends SocketServerAuth {
    * It is recommended to write custom versions in sub-class that takes into account
    * domain specific short-cuts.
    */
-  async synchronize(req, objects) {
+  async synchronize(req, objects, event) {
     const handled = new Set();
     for (const item of objects) {
       if (item === undefined) {

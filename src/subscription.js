@@ -34,9 +34,12 @@ class Subscription {
   /**
    * Check if subscription has seen the given object in the given table.
    * @param {String} table
-   * @param {Any|Any[]} pk
+   * @param {null|Any|Any[]} pk Primary key(s) or null if just created.
    */
   hasSeen(table, pk) {
+    if (this.seen[table] && pk === null) {
+      return true;
+    }
     return this.seen[table] && this.seen[table].has(pk);
   }
 }
