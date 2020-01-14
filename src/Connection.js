@@ -1,5 +1,5 @@
-const Subscription = require('./subscription');
-const Filter = require('./filter');
+const Subscription = require('./Subscription');
+const Filter = require('./Filter');
 
 /**
  * A description of a connection.

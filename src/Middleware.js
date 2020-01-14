@@ -3,7 +3,6 @@
  */
 class Middleware {
   constructor(callback, filter = null) {
-    // TODO: Support for regex and test function.
     if (typeof filter === 'string') {
       this.filter = (req) => req.type === filter;
     } else if (filter === null) {

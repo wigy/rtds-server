@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const SocketServerCore = require('./socket-server-core');
+const SocketServerCore = require('./SocketServerCore');
 
 /**
  * Core server providing handling for login.

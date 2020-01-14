@@ -3,9 +3,9 @@ const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 const cors = require('cors');
-const Message = require('./message');
-const Middleware = require('./middleware');
-const Connection = require('./connection');
+const Message = require('./Message');
+const Middleware = require('./Middleware');
+const Connection = require('./Connection');
 
 /**
  * Socket server keeping records of connections and running middleware handlers for messages.

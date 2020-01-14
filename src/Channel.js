@@ -1,4 +1,6 @@
-// TODO: Rename class files upper-case.
+/**
+ * A channel handling operations for one group of items.
+ */
 class Channel {
   constructor(name, { create, read, update, del, affects }) {
     this.name = name;

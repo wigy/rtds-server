@@ -4,7 +4,6 @@
 class Filter {
   constructor(expression = null) {
     this.expression = expression;
-    // TODO: Should order keys alphabetically.
     if (expression === null) {
       this.name = 'null';
     } else if (expression instanceof Object) {

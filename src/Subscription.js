@@ -1,4 +1,4 @@
-const Filter = require('./filter');
+const Filter = require('./Filter');
 
 /**
  * A description of a channel subscription.

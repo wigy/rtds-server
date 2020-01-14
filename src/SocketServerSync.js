@@ -1,5 +1,5 @@
-const SocketServerAuth = require('./socket-server-auth');
-const Channel = require('./channel');
+const SocketServerAuth = require('./SocketServerAuth');
+const Channel = require('./Channel');
 
 /**
  * Server for handling collection of data with synchronization dependencies.
