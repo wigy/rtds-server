@@ -6,5 +6,6 @@ module.exports = {
   Middleware: require('./Middleware'),
   SocketServerAuth: require('./SocketServerAuth'),
   SocketServerCore: require('./SocketServerCore'),
+  SocketServerLive: require('./SocketServerLive'),
   SocketServerSync: require('./SocketServerSync')
 };

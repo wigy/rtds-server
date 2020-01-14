@@ -124,7 +124,7 @@ class SocketServerSync extends SocketServerAuth {
       req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object creation.`});
       return;
     }
-    const object = await this.channels[channel].create(data);
+    const object = await this.channels[channel].create(data, req);
     return { channel, object };
   }
 
@@ -166,7 +166,7 @@ class SocketServerSync extends SocketServerAuth {
       req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object updates.`});
       return;
     }
-    const object = await this.channels[channel].update(data);
+    const object = await this.channels[channel].update(data, req);
     return { channel, object };
   }
 
@@ -209,7 +209,7 @@ class SocketServerSync extends SocketServerAuth {
       req.socket.emit('failure', {status: 400, message: `Channel '${channel}' does not support object deletion.`});
       return;
     }
-    const object = await this.channels[channel].del(data);
+    const object = await this.channels[channel].del(data, req);
     return { channel, object };
   }
 
