@@ -1,2 +1,4 @@
 node_modules
 tests/test.sqlite
+example/node_modules
+example/example.sqlite

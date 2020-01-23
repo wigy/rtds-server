@@ -148,7 +148,7 @@ class SocketServerSync extends SocketServerAuth {
         this.hooks.log('error', `Invalid object initialization ${JSON.stringify(values)} for ${channel}.`);
       }
     }
-    await this.synchronize(req, results, 'create');
+    await this.synchronize(req, results);
   }
 
   /**
@@ -176,7 +176,6 @@ class SocketServerSync extends SocketServerAuth {
    */
   async updateObjects(req) {
     const results = [];
-    // TODO: DRY
     for (const [channel, values] of Object.entries(req.data)) {
       if (channel === 'token') {
         continue;
@@ -191,7 +190,7 @@ class SocketServerSync extends SocketServerAuth {
         this.hooks.log('error', `Invalid object update ${JSON.stringify(values)} for ${channel}.`);
       }
     }
-    await this.synchronize(req, results, 'update');
+    await this.synchronize(req, results);
   }
 
   /**
@@ -219,7 +218,6 @@ class SocketServerSync extends SocketServerAuth {
    */
   async deleteObjects(req) {
     const results = [];
-    // TODO: DRY
     for (const [channel, values] of Object.entries(req.data)) {
       if (channel === 'token') {
         continue;
@@ -234,7 +232,7 @@ class SocketServerSync extends SocketServerAuth {
         this.hooks.log('error', `Invalid object delete filter ${JSON.stringify(values)} for ${channel}.`);
       }
     }
-    await this.synchronize(req, results, 'delete');
+    await this.synchronize(req, results);
   }
 
   /**
@@ -256,7 +254,6 @@ class SocketServerSync extends SocketServerAuth {
    * Scan for all listeners that needs update for the changed objects.
    * @param {Message} req
    * @param {Object[]} objects
-   * @param {String} event Either 'create', 'update' or 'delete'.
    * @param {String} objects[].channel
    * @param {Object} objects[].object
    *
@@ -264,7 +261,7 @@ class SocketServerSync extends SocketServerAuth {
    * It is recommended to write custom versions in sub-class that takes into account
    * domain specific short-cuts.
    */
-  async synchronize(req, objects, event) {
+  async synchronize(req, objects) {
     const handled = new Set();
     for (const item of objects) {
       if (item === undefined) {

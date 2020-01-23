@@ -1,3 +1,4 @@
+const { PK } = require('rtds-query');
 const SocketServerSync = require('./SocketServerSync');
 const LiveQueryChannel = require('./LiveQueryChannel');
 
@@ -94,12 +95,19 @@ class SocketServerLive extends SocketServerSync {
   }
 
   /**
+   * For future expansion: signal other server over Redis.
+   * @param {String} table
+   * @param {Any|Any[]} pk
+   */
+  async redisSync(table, pk) {
+  }
+
+  /**
    * Find all affected subscriptions and refresh them.
    * @param {Request} req
    * @param {Object[]} objects
-   * @param {String} event Either 'create', 'update' or 'delete'.
    */
-  async synchronize(req, objects, event) {
+  async synchronize(req, objects) {
     // If set, scan through all subscriptions (for debugging purposes).
     const SAFE = false;
     for (const item of objects) {
@@ -107,17 +115,15 @@ class SocketServerLive extends SocketServerSync {
         continue;
       }
 
+      const type = req.query.getType();
       const { channel, object } = item;
-
-      // TODO: We need to find table and PK for an object in reliable way from `req.query`.
-      const tableName = channel;
-      // TODO: Drop event. Can be determined from query (add function like query.type()).
-      const pk = event === 'create' ? null : object.id;
-      if (pk === undefined) {
-        throw new Error('Proper primary key handling not yet implemented.');
+      const tableName = req.query.root.table;
+      const pk = type === 'create' ? null : PK.getPK(req.query.root.pk, object);
+      if (!tableName) {
+        throw new Error(`Cannot figure out table name when synchronizing '${channel}'.`);
       }
 
-      // TODO: This could be the point where we use Redis to parallelize updates.
+      this.redisSync(tableName, pk);
 
       this.logSync(`Refreshing ${tableName} object with PK`, pk);
       const seenSubs = [];

@@ -36,7 +36,6 @@ class LiveQueryChannel extends Channel {
       queryDelete = new Query(queryDelete);
       callbacks.del = async (data, req) => {
         req.query = queryDelete;
-        // TODO: Need to fetch PKs explicitly re-using delete query.
         await queryDelete.delete(driver, data);
         return data;
       };

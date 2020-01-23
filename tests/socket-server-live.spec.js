@@ -1,5 +1,4 @@
 const sinon = require('sinon');
-const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const { SocketServerLive, Message } = require('../src');
@@ -7,17 +6,6 @@ const { Driver } = require('rtds-query');
 
 // If set, show messages from server.
 const DEBUG = false;
-
-// Helper to read in SQL-file.
-const readSql = async (driver, filePath) => {
-  const fileContent = fs.readFileSync(filePath).toString('utf-8');
-  for (let sql of fileContent.split(';')) {
-    sql = sql.trim();
-    if (sql) {
-      await driver.runQuery(sql);
-    }
-  }
-};
 
 // Helper to make a brief pause to wait for emitted events to propagate.
 const briefPause = async (delay) => {
@@ -42,7 +30,7 @@ describe('socket server live', async () => {
     });
 
   before(async () => {
-    await readSql(driver, path.join(__dirname, 'migrations/init.sql'));
+    await driver.runSqlFile(path.join(__dirname, 'migrations/init.sql'));
     await driver.initialize();
 
     server.makeChannel('investors', {
@@ -61,7 +49,7 @@ describe('socket server live', async () => {
   });
 
   after(async () => {
-    await readSql(driver, path.join(__dirname, 'migrations/exit.sql'));
+    await driver.runSqlFile(path.join(__dirname, 'migrations/exit.sql'));
   });
 
   const INVESTOR_DATA = [
