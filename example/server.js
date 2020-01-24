@@ -12,18 +12,24 @@ async function main() {
   await driver.runSqlFile(`${__dirname}/example.sql`);
   await driver.initialize();
 
+  // TODO: When there are no todos on login, the live update is not working.
+
   // Set up the live server and define channels.
   const server = new SocketServerLive({ PORT: 2999, SECRET: 'xyz123' }, { driver, auth: () => ({id: 1, name: 'auto'}) });
   server.makeChannel('todos', {
+    // This is for fetching a list of todos.
     select: ['id', 'title', 'done'],
     table: 'todos'
   }, {
+    // This allows you to create new entries by specifying `title`.
     insert: ['title'],
     table: 'todos'
   }, {
-    update: ['title'],
+    // This allows to update old entries `done` field.
+    update: ['done'],
     table: 'todos'
   }, {
+    // This is used for deleting.
     delete: ['id'],
     table: 'todos'
   });

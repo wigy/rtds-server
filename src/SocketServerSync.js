@@ -27,11 +27,11 @@ class SocketServerSync extends SocketServerAuth {
   /**
    * Define a new channel and its handler functions.
    * @param {String} channel
-   * @param {Object} hooks
-   * @param {Function} hooks.read
-   * @param {Function} hooks.create
-   * @param {Function} hooks.update
-   * @param {Function} hooks.affects
+   * @param {Object} ops
+   * @param {Function} ops.read
+   * @param {Function} ops.create
+   * @param {Function} ops.update
+   * @param {Function} ops.affects
    */
   addChannel(channel, { create, read, update, del, affects }) {
     if (this.channels[channel]) {
@@ -145,7 +145,7 @@ class SocketServerSync extends SocketServerAuth {
       } else if (values instanceof Object) {
         results.push(await this.createObject(req, channel, values));
       } else {
-        this.hooks.log('error', `Invalid object initialization ${JSON.stringify(values)} for ${channel}.`);
+        this.log('error', `Invalid object initialization ${JSON.stringify(values)} for ${channel}.`);
       }
     }
     await this.synchronize(req, results);
@@ -187,7 +187,7 @@ class SocketServerSync extends SocketServerAuth {
       } else if (values instanceof Object) {
         results.push(await this.updateObject(req, channel, values));
       } else {
-        this.hooks.log('error', `Invalid object update ${JSON.stringify(values)} for ${channel}.`);
+        this.log('error', `Invalid object update ${JSON.stringify(values)} for ${channel}.`);
       }
     }
     await this.synchronize(req, results);
@@ -229,7 +229,7 @@ class SocketServerSync extends SocketServerAuth {
       } else if (values instanceof Object) {
         results.push(await this.deleteObject(req, channel, values));
       } else {
-        this.hooks.log('error', `Invalid object delete filter ${JSON.stringify(values)} for ${channel}.`);
+        this.log('error', `Invalid object delete filter ${JSON.stringify(values)} for ${channel}.`);
       }
     }
     await this.synchronize(req, results);
