@@ -35,6 +35,15 @@ class SocketServerAuth extends SocketServerCore {
       req.socket.emit('login-successful', {user, token});
     });
 
+    // Handle logout messages and unsubscribe everything and delete client.
+    this.use('logout', async (req, next, err) => {
+      if (err) {
+        this.log('error', `Logout failed for ${JSON.stringify(req.data)}`);
+        return;
+      }
+      req.socket.emit('logout-successful');
+    });
+
     // Everything else, check the token or deny access with 403 error.
     this.use((req, next) => {
       if (!req.data.token) {
