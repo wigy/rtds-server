@@ -153,5 +153,6 @@ are accessed, and finally starting the server.
 There is a simple example that can be used out of the box with the RTDS Client.
 ```
 cd example
+npm install
 npm start
 ```
