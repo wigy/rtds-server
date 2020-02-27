@@ -3,7 +3,7 @@ const SocketServerSync = require('./SocketServerSync');
 const LiveQueryChannel = require('./LiveQueryChannel');
 
 // If set, display logic of syncing.
-const DEBUG_SYNCING = true;
+const DEBUG_SYNCING = false;
 
 class SocketServerLive extends SocketServerSync {
 
