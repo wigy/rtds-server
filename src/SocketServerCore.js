@@ -24,7 +24,11 @@ class SocketServerCore {
     this.log = log;
     this.app = express();
     this.server = http.createServer(this.app);
-    this.io = socketIO(this.server);
+    this.io = socketIO(this.server, {
+      cors: {
+        origin: "http://localhost:3202",
+      }
+    });
     this.app.use(cors());
     this.connections = {};
     this.registrations = {};
