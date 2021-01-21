@@ -26,7 +26,8 @@ class SocketServerCore {
     this.server = http.createServer(this.app);
     this.io = socketIO(this.server, {
       cors: {
-        origin: "http://localhost:3202",
+        // TODO: Get from config.
+        origin: 'http://localhost:3202'
       }
     });
     this.app.use(cors());
