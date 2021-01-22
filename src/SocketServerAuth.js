@@ -19,6 +19,7 @@ class SocketServerAuth extends SocketServerCore {
     log = (type, ...msg) => console.log(`[${type}]`, ...msg)
   } = {}) {
     super(config, { log });
+    this.skipAuthentication = new Set();
 
     // Handle login messages and send signed token on success or 401 error on failure.
     this.use('login', async (req, next, err) => {
@@ -46,22 +47,38 @@ class SocketServerAuth extends SocketServerCore {
 
     // Everything else, check the token or deny access with 403 error.
     this.use((req, next) => {
+      const error = (message) => {
+        if (this.skipAuthentication.has(req.type)) {
+          next();
+          return;
+        }
+        req.socket.emit('failure', {status: 403, message});
+      };
+
       if (!req.data.token) {
-        req.socket.emit('failure', {status: 403, message: 'No token provided.'});
+        error('No token provided.');
         return;
       }
       try {
         const decoded = jwt.verify(req.data.token, this.config.SECRET);
         if (decoded.app !== 'Stakes') {
-          req.socket.emit('failure', {status: 403, message: 'Token content invalid.'});
+          error('Token content invalid.');
           return;
         }
         req.user = decoded.user;
         next();
       } catch (err) {
-        req.socket.emit('failure', {status: 403, message: 'Token verification failed.'});
+        error('Token verification failed.');
       }
     });
+  }
+
+  /**
+   * Allow a message type without authentication.
+   * @param {String} type
+   */
+  noAuth(type) {
+    this.skipAuthentication.add(type);
   }
 }
 
